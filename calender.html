@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>College & Festival Calendar</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- PWA Manifest Link -->
+  <link rel="manifest" href="manifest.json">
+  <!-- Theme color for PWA -->
+  <meta name="theme-color" content="#8B5CF6"/>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    /* Simple transition for modal */
+    .modal-backdrop {
+      transition: opacity 0.3s ease;
+    }
+    .modal-content {
+      transition: transform 0.3s ease;
+    }
+    .day-cell {
+      min-height: 120px;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-50 to-purple-50 text-gray-800">
+
+  <div class="container mx-auto p-4 max-w-7xl">
+    <h1 class="text-3xl md:text-4xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 mb-6">📅 College & Festival Calendar</h1>
+    
+    <div class="bg-white rounded-2xl shadow-xl p-4 sm:p-6">
+      <!-- Calendar Header -->
+      <div class="flex items-center justify-between mb-4">
+        <button onclick="prevMonth()" class="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg hover:from-indigo-600 hover:to-purple-600 transition-all duration-300 shadow-md">⬅ Prev</button>
+        <div id="month-year" class="text-xl md:text-2xl font-bold text-gray-700 text-center"></div>
+        <button onclick="nextMonth()" class="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg hover:from-indigo-600 hover:to-purple-600 transition-all duration-300 shadow-md">Next ➡</button>
+      </div>
+      
+      <!-- Add Event Button -->
+      <div class="flex justify-center mb-4">
+          <button onclick="openAddEventModal()" class="w-full md:w-auto px-6 py-3 bg-gradient-to-r from-green-400 to-teal-500 text-white font-semibold rounded-lg hover:from-green-500 hover:to-teal-600 transition-all duration-300 shadow-lg transform hover:scale-105">
+            ✨ Add New Event
+          </button>
+      </div>
+
+      <!-- Calendar Grid -->
+      <div class="grid grid-cols-7 gap-2 text-center" id="calendar-header">
+        <div class="font-semibold text-gray-600 py-2">Sun</div>
+        <div class="font-semibold text-gray-600 py-2">Mon</div>
+        <div class="font-semibold text-gray-600 py-2">Tue</div>
+        <div class="font-semibold text-gray-600 py-2">Wed</div>
+        <div class="font-semibold text-gray-600 py-2">Thu</div>
+        <div class="font-semibold text-gray-600 py-2">Fri</div>
+        <div class="font-semibold text-gray-600 py-2">Sat</div>
+      </div>
+      <div class="grid grid-cols-7 gap-2" id="calendar-grid"></div>
+    </div>
+  </div>
+
+  <!-- Event Details Modal -->
+  <div id="event-details-modal" class="modal-backdrop fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden" onclick="closeModal(event, 'event-details-modal')">
+    <div class="modal-content bg-white rounded-xl shadow-2xl p-6 w-full max-w-md mx-auto transform scale-95">
+      <h3 id="event-modal-title" class="text-2xl font-bold mb-4 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Event Details</h3>
+      <div id="event-modal-body"></div>
+       <button onclick="deleteCurrentEvent()" id="delete-event-btn" class="mt-4 w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">Delete Event</button>
+    </div>
+  </div>
+
+  <!-- Add Event Modal -->
+  <div id="add-event-modal" class="modal-backdrop fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden" onclick="closeModal(event, 'add-event-modal')">
+      <div class="modal-content bg-white rounded-xl shadow-2xl p-6 w-full max-w-md mx-auto transform scale-95">
+          <h3 class="text-2xl font-bold mb-4 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Add a New Event</h3>
+          <form id="add-event-form" onsubmit="saveEvent(event)">
+              <div class="mb-4">
+                  <label for="event-name" class="block text-sm font-medium text-gray-700 mb-1">Event Name</label>
+                  <input type="text" id="event-name" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" required>
+              </div>
+              <div class="mb-4">
+                  <label for="event-date" class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                  <input type="date" id="event-date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" required>
+              </div>
+              <div class="mb-6">
+                  <label for="event-type" class="block text-sm font-medium text-gray-700 mb-1">Event Type</label>
+                  <select id="event-type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                      <option value="college">College Event</option>
+                      <option value="holiday">College Holiday</option>
+                      <option value="festival">Festival</option>
+                  </select>
+              </div>
+              <div class="flex justify-end space-x-3">
+                  <button type="button" onclick="closeModal(null, 'add-event-modal')" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">Cancel</button>
+                  <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">Save Event</button>
+              </div>
+          </form>
+      </div>
+  </div>
+
+
+  <script>
+    // --- STATE MANAGEMENT ---
+    let currentMonth = new Date().getMonth();
+    let currentYear = new Date().getFullYear();
+    let events = {};
+    let selectedEventDate = null;
+
+    // --- INITIAL DATA ---
+    const initialEvents = {
+        // 2025 Festivals (India & Odisha specific)
+        "2025-01-14": { type: "festival", name: "Makar Sankranti" },
+        "2025-01-26": { type: "holiday", name: "Republic Day" },
+        "2025-02-26": { type: "festival", name: "Maha Shivaratri" },
+        "2025-03-14": { type: "festival", name: "Holi" },
+        "2025-04-01": { type: "holiday", name: "Utkal Divas" },
+        "2025-04-18": { type: "festival", name: "Good Friday" },
+        "2025-06-14": { type: "festival", name: "Raja Parba" },
+        "2025-06-29": { type: "festival", name: "Rath Yatra" },
+        "2025-08-15": { type: "holiday", name: "Independence Day" },
+        "2025-08-29": { type: "festival", name: "Ganesh Chaturthi" },
+        "2025-10-02": { type: "festival", name: "Dussehra" },
+        "2025-10-20": { type: "festival", name: "Diwali" },
+        "2025-12-25": { type: "festival", name: "Christmas" },
+    };
+
+    const eventColors = {
+        festival: 'bg-gradient-to-r from-amber-100 to-orange-200 border-amber-300 text-amber-900 font-medium',
+        holiday: 'bg-gradient-to-r from-rose-100 to-pink-200 border-rose-300 text-rose-900 font-medium',
+        college: 'bg-gradient-to-r from-indigo-100 to-purple-200 border-indigo-300 text-indigo-900 font-medium',
+    };
+
+    // --- CORE CALENDAR LOGIC ---
+    function generateCalendar(month, year) {
+        const grid = document.getElementById("calendar-grid");
+        const monthYearEl = document.getElementById("month-year");
+        grid.innerHTML = "";
+
+        const firstDay = new Date(year, month).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        
+        monthYearEl.textContent = `${monthNames[month]} ${year}`;
+
+        // Blank days
+        for (let i = 0; i < firstDay; i++) {
+            grid.appendChild(document.createElement('div'));
+        }
+
+        // Calendar days
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const dayCell = document.createElement('div');
+            dayCell.className = "day-cell p-2 border border-gray-200 rounded-lg flex flex-col justify-between transition-colors duration-200 cursor-pointer hover:bg-gray-100";
+            
+            const dayNumber = document.createElement('div');
+            dayNumber.textContent = day;
+            dayNumber.className = 'font-semibold text-gray-700';
+            dayCell.appendChild(dayNumber);
+
+            // Add event indicator
+            if (events[dateStr]) {
+                const event = events[dateStr];
+                const eventPill = document.createElement('div');
+                eventPill.textContent = event.name;
+                eventPill.className = `text-xs p-1 rounded-md truncate ${eventColors[event.type] || 'bg-gray-200'}`;
+                dayCell.appendChild(eventPill);
+                dayCell.onclick = () => showEventDetails(dateStr);
+            }
+
+            // Highlight today
+            const today = new Date();
+            if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
+                dayNumber.classList.add('bg-gradient-to-br', 'from-indigo-600', 'to-purple-600', 'text-white', 'rounded-full', 'w-8', 'h-8', 'flex', 'items-center', 'justify-center', 'mx-auto', 'shadow-lg');
+            }
+            
+            grid.appendChild(dayCell);
+        }
+    }
+    
+    // --- EVENT & MODAL HANDLING ---
+    function showEventDetails(date) {
+        selectedEventDate = date;
+        const event = events[date];
+        if (!event) return;
+
+        const modal = document.getElementById('event-details-modal');
+        const titleEl = document.getElementById('event-modal-title');
+        const bodyEl = document.getElementById('event-modal-body');
+        const deleteBtn = document.getElementById('delete-event-btn');
+
+        const formattedDate = new Date(date + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+        titleEl.textContent = event.name;
+        bodyEl.innerHTML = `
+            <p class="text-gray-600 text-lg mb-2">${formattedDate}</p>
+            <p class="capitalize text-md font-semibold px-3 py-1 rounded-full inline-block ${eventColors[event.type]}">
+                ${event.type.replace('-', ' ')}
+            </p>
+        `;
+        
+        // Show delete button only for user-added events
+        if (!initialEvents[date]) {
+            deleteBtn.style.display = 'block';
+        } else {
+            deleteBtn.style.display = 'none';
+        }
+
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modal.querySelector('.modal-content').classList.remove('scale-95');
+        }, 10);
+    }
+    
+    function openAddEventModal() {
+        document.getElementById('add-event-form').reset();
+        const modal = document.getElementById('add-event-modal');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modal.querySelector('.modal-content').classList.remove('scale-95');
+        }, 10);
+    }
+
+    function closeModal(event, modalId) {
+        if (event && event.target !== event.currentTarget) return;
+        
+        const modal = document.getElementById(modalId);
+        modal.classList.add('opacity-0');
+        modal.querySelector('.modal-content').classList.add('scale-95');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+        selectedEventDate = null;
+    }
+    
+    // --- DATA PERSISTENCE (LOCALSTORAGE) ---
+    function saveEvent(e) {
+        e.preventDefault();
+        const name = document.getElementById('event-name').value;
+        const date = document.getElementById('event-date').value;
+        const type = document.getElementById('event-type').value;
+
+        if (name && date && type) {
+            events[date] = { name, type };
+            localStorage.setItem('calendarEvents', JSON.stringify(events));
+            generateCalendar(currentMonth, currentYear);
+            closeModal(null, 'add-event-modal');
+        }
+    }
+
+    function deleteCurrentEvent() {
+        if (selectedEventDate && events[selectedEventDate] && !initialEvents[selectedEventDate]) {
+            delete events[selectedEventDate];
+            localStorage.setItem('calendarEvents', JSON.stringify(events));
+            generateCalendar(currentMonth, currentYear);
+            closeModal(null, 'event-details-modal');
+        }
+    }
+
+    function loadEvents() {
+        const storedEvents = JSON.parse(localStorage.getItem('calendarEvents')) || {};
+        // Merge initial events with user-saved events
+        events = { ...initialEvents, ...storedEvents };
+    }
+
+    // --- NAVIGATION ---
+    function nextMonth() {
+        currentMonth = (currentMonth + 1) % 12;
+        if (currentMonth === 0) currentYear++;
+        generateCalendar(currentMonth, currentYear);
+    }
+
+    function prevMonth() {
+        currentMonth = (currentMonth - 1 + 12) % 12;
+        if (currentMonth === 11) currentYear--;
+        generateCalendar(currentMonth, currentYear);
+    }
+
+    // --- INITIALIZATION ---
+    document.addEventListener('DOMContentLoaded', () => {
+        loadEvents();
+        generateCalendar(currentMonth, currentYear);
+    });
+
+    // --- PWA Service Worker Registration ---
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+                .then(registration => {
+                    console.log('Service Worker registered with scope:', registration.scope);
+                })
+                .catch(err => {
+                    console.error('Service Worker registration failed:', err);
+                });
+        });
+    }
+
+  </script>
+</body>
+</html>
+
